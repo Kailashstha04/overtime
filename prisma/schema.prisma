@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  fullName    String
+  username    String   @unique
+  email       String   @unique
+  password    String
+  role        String   @default("STAFF")
+  department  String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  overtimeRecords OvertimeRecord[]
+  auditLogs       AuditLog[]
+}
+
+model OvertimeRecord {
+  id            String    @id @default(cuid())
+  staffId       String
+  staffName     String
+  department    String
+  dateAD        String
+  dateBS        String
+  patientName   String
+  procedure     String
+  type          String
+  shiftDuty     String
+  startTime     String
+  endTime       String
+  totalMinutes  Int
+  amount        Int
+  remarks       String?
+  status        String    @default("PENDING")
+  createdAt     DateTime  @default(now())
+  verifiedAt    DateTime?
+  verifiedBy    String?
+
+  staff User @relation(fields: [staffId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  userName  String
+  action    String
+  recordId  String?
+  details   String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RateSettings {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  otNursing   Json
+  cleaning    Json
+}
