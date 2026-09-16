@@ -1,0 +1,10 @@
+{
+  "description": "This application streamlines overtime management for businesses, allowing employees to easily track and request overtime hours, enhancing productivity and compliance.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
