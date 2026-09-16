@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Layout from '../layout/Layout';
 import { useApp } from '../../contexts/AppContext';
-import { getUsers, saveUsers } from '../../lib/store';
+import { apiUpdateUser } from '../../lib/store';
 
 export default function StaffProfile() {
   const { currentUser, refreshData } = useApp();
@@ -9,25 +9,22 @@ export default function StaffProfile() {
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setMsg(''); setError('');
-    const users = getUsers();
-    const idx = users.findIndex(u => u.id === currentUser?.id);
-    if (idx === -1) { setError('User not found.'); return; }
-    if (users[idx].password !== form.currentPwd) { setError('Current password is incorrect.'); return; }
+    if (!currentUser) { setError('User not found.'); return; }
+    if (currentUser.password !== form.currentPwd) { setError('Current password is incorrect.'); return; }
     if (form.newPwd) {
       if (form.newPwd.length < 6) { setError('New password must be at least 6 characters.'); return; }
       if (form.newPwd !== form.confirmPwd) { setError('Passwords do not match.'); return; }
-      users[idx].password = form.newPwd;
     }
-    if (form.email && form.email !== currentUser?.email) {
-      if (users.find((u, i) => i !== idx && u.email === form.email)) { setError('Email already in use.'); return; }
-      users[idx].email = form.email;
+    try {
+      await apiUpdateUser({ id: currentUser.id, email: form.email, password: form.newPwd || undefined });
+      await refreshData();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Unable to update profile.');
+      return;
     }
-    saveUsers(users);
-    localStorage.setItem('so_current_user', JSON.stringify(users[idx]));
-    refreshData();
     setMsg('Profile updated successfully.');
     setForm(f => ({ ...f, currentPwd: '', newPwd: '', confirmPwd: '' }));
   };

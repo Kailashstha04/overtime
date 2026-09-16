@@ -63,6 +63,36 @@ const DEFAULT_RATES: RateSettings = {
 // Legacy export for backward compatibility
 export const RATES: Record<OTType, number> = { Major: 1000, Intermediate: 800, Minor: 500 };
 
+async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetch(path, {
+    headers: { 'Content-Type': 'application/json', ...(options.headers ?? {}) },
+    ...options,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || 'Request failed');
+  }
+
+  const data = await response.json();
+  return data as T;
+}
+
+export async function apiGetRateSettings(): Promise<RateSettings> {
+  try {
+    return await apiRequest<RateSettings>('/api/admin/settings');
+  } catch {
+    return getRateSettings();
+  }
+}
+
+export async function apiSaveRateSettings(rates: RateSettings): Promise<void> {
+  await apiRequest('/api/admin/settings', {
+    method: 'PUT',
+    body: JSON.stringify(rates),
+  });
+}
+
 export function getRateSettings(): RateSettings {
   const stored = localStorage.getItem('so_rates');
   if (!stored) return DEFAULT_RATES;
@@ -190,6 +220,59 @@ function initStore() {
   }
 }
 
+export async function apiGetUsers(): Promise<User[]> {
+  try {
+    return await apiRequest<User[]>('/api/admin/staff');
+  } catch {
+    return getUsers();
+  }
+}
+
+export async function apiUpdateUser(updates: Partial<User> & { id: string }): Promise<User> {
+  try {
+    return await apiRequest<User>('/api/admin/staff', {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+  } catch {
+    const users = getUsers();
+    const index = users.findIndex(user => user.id === updates.id);
+    if (index === -1) throw new Error('User not found.');
+    users[index] = { ...users[index], ...updates };
+    saveUsers(users);
+    return users[index];
+  }
+}
+
+export async function apiGetRecords(): Promise<OvertimeRecord[]> {
+  try {
+    return await apiRequest<OvertimeRecord[]>('/api/overtime');
+  } catch {
+    return getRecords();
+  }
+}
+
+export async function apiGetAuditLogs(): Promise<AuditLog[]> {
+  try {
+    return await apiRequest<AuditLog[]>('/api/admin/audit');
+  } catch {
+    return getAuditLogs();
+  }
+}
+
+export async function apiAddAuditLog(log: Omit<AuditLog, 'id' | 'createdAt'>): Promise<void> {
+  try {
+    await apiRequest('/api/admin/audit', {
+      method: 'POST',
+      body: JSON.stringify(log),
+    });
+  } catch {
+    const logs = getAuditLogs();
+    logs.unshift({ ...log, id: `audit-${Date.now()}`, createdAt: new Date().toISOString() });
+    localStorage.setItem('so_audit', JSON.stringify(logs));
+  }
+}
+
 export function getUsers(): User[] {
   initStore();
   return JSON.parse(localStorage.getItem('so_users') || '[]');
@@ -219,10 +302,34 @@ export function addAuditLog(log: Omit<AuditLog, 'id' | 'createdAt'>) {
   localStorage.setItem('so_audit', JSON.stringify(logs));
 }
 
+export async function apiFindUser(username: string, password: string): Promise<User | null> {
+  try {
+    const user = await apiRequest<User | null>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    });
+    return user;
+  } catch {
+    return findUser(username, password);
+  }
+}
+
 export function findUser(username: string, password: string): User | null {
   if (username === ADMIN_USER.username && password === ADMIN_USER.password) return ADMIN_USER;
   const users = getUsers();
   return users.find(u => (u.username === username || u.email === username) && u.password === password && u.isActive) ?? null;
+}
+
+export async function apiRegisterUser(data: { fullName: string; username: string; email: string; password: string; department: Department }): Promise<{ success: boolean; error?: string }> {
+  try {
+    return await apiRequest<{ success: boolean; error?: string }>('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    const result = registerUser(data);
+    return result;
+  }
 }
 
 export function registerUser(data: { fullName: string; username: string; email: string; password: string; department: Department }): { success: boolean; error?: string } {
@@ -243,6 +350,17 @@ export function registerUser(data: { fullName: string; username: string; email: 
   users.push(newUser);
   saveUsers(users);
   return { success: true };
+}
+
+export async function apiAddRecord(record: Omit<OvertimeRecord, 'id' | 'createdAt' | 'dateBS' | 'amount' | 'totalMinutes' | 'status'>): Promise<OvertimeRecord> {
+  try {
+    return await apiRequest<OvertimeRecord>('/api/overtime', {
+      method: 'POST',
+      body: JSON.stringify(record),
+    });
+  } catch {
+    return addRecord(record);
+  }
 }
 
 export function addRecord(record: Omit<OvertimeRecord, 'id' | 'createdAt' | 'dateBS' | 'amount' | 'totalMinutes' | 'status'>): OvertimeRecord {
@@ -283,12 +401,39 @@ export function updateRecord(id: string, updates: Partial<OvertimeRecord>): void
   saveRecords(records);
 }
 
+export async function apiUpdateRecord(id: string, updates: Partial<OvertimeRecord>): Promise<void> {
+  try {
+    await apiRequest(`/api/overtime/${id}`, { method: 'PATCH', body: JSON.stringify(updates) });
+  } catch {
+    updateRecord(id, updates);
+  }
+}
+
 export function deleteRecord(id: string): void {
   saveRecords(getRecords().filter(r => r.id !== id));
 }
 
+export async function apiDeleteRecord(id: string): Promise<void> {
+  try {
+    await apiRequest(`/api/overtime/${id}`, { method: 'DELETE' });
+  } catch {
+    deleteRecord(id);
+  }
+}
+
 export function verifyRecord(id: string, adminName: string): void {
   updateRecord(id, { status: 'VERIFIED', verifiedAt: new Date().toISOString(), verifiedBy: adminName });
+}
+
+export async function apiVerifyRecord(id: string, adminName: string): Promise<void> {
+  try {
+    await apiRequest(`/api/overtime/${id}/verify`, {
+      method: 'POST',
+      body: JSON.stringify({ verified: true, adminName }),
+    });
+  } catch {
+    verifyRecord(id, adminName);
+  }
 }
 
 export function unverifyRecord(id: string): void {
@@ -297,6 +442,17 @@ export function unverifyRecord(id: string): void {
   if (idx === -1) return;
   records[idx] = { ...records[idx], status: 'PENDING', verifiedAt: undefined, verifiedBy: undefined };
   saveRecords(records);
+}
+
+export async function apiUnverifyRecord(id: string): Promise<void> {
+  try {
+    await apiRequest(`/api/overtime/${id}/verify`, {
+      method: 'POST',
+      body: JSON.stringify({ verified: false }),
+    });
+  } catch {
+    unverifyRecord(id);
+  }
 }
 
 export function isRecordLocked(record: OvertimeRecord, role: UserRole): boolean {

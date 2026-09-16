@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Layout from '../layout/Layout';
-import { getRateSettings, saveRateSettings, recalculateAmountsAfterRateChange, RateSettings } from '../../lib/store';
+import { getRateSettings, apiGetRateSettings, apiSaveRateSettings } from '../../lib/store';
+import type { RateSettings } from '../../lib/store';
 import { useApp } from '../../contexts/AppContext';
 
 export default function RateSettings() {
@@ -8,10 +9,13 @@ export default function RateSettings() {
   const [rates, setRates] = useState<RateSettings>(getRateSettings);
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
-    saveRateSettings(rates);
-    recalculateAmountsAfterRateChange();
-    refreshData();
+  useEffect(() => {
+    apiGetRateSettings().then(setRates).catch(() => undefined);
+  }, []);
+
+  const handleSave = async () => {
+    await apiSaveRateSettings(rates);
+    await refreshData();
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };

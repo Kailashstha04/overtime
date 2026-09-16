@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import Layout from '../layout/Layout';
 import { StatusBadge, TypeBadge, EmptyState, ConfirmDialog } from '../shared';
 import { useApp } from '../../contexts/AppContext';
-import { verifyRecord, unverifyRecord, deleteRecord, addAuditLog } from '../../lib/store';
+import { apiVerifyRecord, apiUnverifyRecord, apiDeleteRecord, apiAddAuditLog } from '../../lib/store';
 import { formatMinutes, BS_MONTHS, getCurrentBS } from '../../lib/nepaliDate';
 
 export default function AllOvertime() {
@@ -44,22 +44,22 @@ export default function AllOvertime() {
     return rs;
   }, [records, search, filterStatus, filterType, filterStaff, filterBSMonth, filterBSYear]);
 
-  const handleVerify = (id: string) => {
-    verifyRecord(id, currentUser!.fullName);
-    addAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: 'VERIFY', recordId: id, details: 'Verified overtime record' });
-    refreshData();
+  const handleVerify = async (id: string) => {
+    await apiVerifyRecord(id, currentUser!.fullName);
+    await apiAddAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: 'VERIFY', recordId: id, details: 'Verified overtime record' });
+    await refreshData();
   };
 
-  const handleUnverify = (id: string) => {
-    unverifyRecord(id);
-    addAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: 'UNVERIFY', recordId: id, details: 'Unverified overtime record' });
-    refreshData();
+  const handleUnverify = async (id: string) => {
+    await apiUnverifyRecord(id);
+    await apiAddAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: 'UNVERIFY', recordId: id, details: 'Unverified overtime record' });
+    await refreshData();
   };
 
-  const handleDelete = (id: string) => {
-    deleteRecord(id);
-    addAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: 'DELETE', recordId: id, details: 'Deleted overtime record' });
-    refreshData();
+  const handleDelete = async (id: string) => {
+    await apiDeleteRecord(id);
+    await apiAddAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: 'DELETE', recordId: id, details: 'Deleted overtime record' });
+    await refreshData();
     setDeleteId(null);
   };
 

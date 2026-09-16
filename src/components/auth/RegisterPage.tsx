@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
-import { registerUser, Department } from '../../lib/store';
+import { apiRegisterUser, Department } from '../../lib/store';
 
 export default function RegisterPage() {
   const { navigate } = useApp();
@@ -12,14 +12,14 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     if (form.password !== form.confirm) { setError('Passwords do not match.'); return; }
     if (form.password.length < 6) { setError('Password must be at least 6 characters.'); return; }
     setLoading(true);
-    setTimeout(() => {
-      const result = registerUser({
+    try {
+      const result = await apiRegisterUser({
         fullName: form.fullName,
         username: form.username,
         email: form.email,
@@ -28,8 +28,11 @@ export default function RegisterPage() {
       });
       if (result.success) setSuccess(true);
       else setError(result.error ?? 'Registration failed.');
+    } catch {
+      setError('Unable to connect to the server.');
+    } finally {
       setLoading(false);
-    }, 400);
+    }
   };
 
   if (success) {

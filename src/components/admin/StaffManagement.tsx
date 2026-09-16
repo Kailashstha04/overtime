@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import Layout from '../layout/Layout';
 import { EmptyState } from '../shared';
 import { useApp } from '../../contexts/AppContext';
-import { getUsers, saveUsers, addAuditLog } from '../../lib/store';
+import { apiUpdateUser, apiAddAuditLog } from '../../lib/store';
 
 export default function StaffManagement() {
   const { currentUser, users, records, refreshData } = useApp();
@@ -31,14 +31,10 @@ export default function StaffManagement() {
     };
   };
 
-  const handleToggleActive = (userId: string, currentActive: boolean) => {
-    const allUsers = getUsers();
-    const idx = allUsers.findIndex(u => u.id === userId);
-    if (idx === -1) return;
-    allUsers[idx].isActive = !currentActive;
-    saveUsers(allUsers);
-    addAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: currentActive ? 'DEACTIVATE' : 'ACTIVATE', recordId: userId, details: `${currentActive ? 'Deactivated' : 'Activated'} staff account` });
-    refreshData();
+  const handleToggleActive = async (userId: string, currentActive: boolean) => {
+    await apiUpdateUser({ id: userId, isActive: !currentActive });
+    await apiAddAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: currentActive ? 'DEACTIVATE' : 'ACTIVATE', recordId: userId, details: `${currentActive ? 'Deactivated' : 'Activated'} staff account` });
+    await refreshData();
   };
 
   const startEdit = (userId: string) => {
@@ -49,16 +45,11 @@ export default function StaffManagement() {
     setMsg('');
   };
 
-  const handleSaveEdit = () => {
-    const allUsers = getUsers();
-    const idx = allUsers.findIndex(u => u.id === editUser);
-    if (idx === -1) return;
-    allUsers[idx].fullName = editForm.fullName;
-    allUsers[idx].email = editForm.email;
-    if (editForm.newPassword) allUsers[idx].password = editForm.newPassword;
-    saveUsers(allUsers);
-    addAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: 'EDIT_STAFF', recordId: editUser!, details: `Edited staff account: ${editForm.fullName}` });
-    refreshData();
+  const handleSaveEdit = async () => {
+    if (!editUser) return;
+    await apiUpdateUser({ id: editUser, fullName: editForm.fullName, email: editForm.email, password: editForm.newPassword || undefined });
+    await apiAddAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: 'EDIT_STAFF', recordId: editUser, details: `Edited staff account: ${editForm.fullName}` });
+    await refreshData();
     setEditUser(null);
     setMsg('Staff updated successfully.');
   };

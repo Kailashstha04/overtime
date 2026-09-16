@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
-import { findUser } from '../../lib/store';
+import { apiFindUser } from '../../lib/store';
 
 export default function LoginPage() {
   const { login, navigate } = useApp();
@@ -8,19 +8,19 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    setTimeout(() => {
-      const user = findUser(form.username.trim(), form.password);
-      if (user) {
-        login(user);
-      } else {
-        setError('Invalid username or password.');
-      }
+    try {
+      const user = await apiFindUser(form.username.trim(), form.password);
+      if (user) login(user);
+      else setError('Invalid username or password.');
+    } catch {
+      setError('Unable to connect to the server.');
+    } finally {
       setLoading(false);
-    }, 400);
+    }
   };
 
   return (

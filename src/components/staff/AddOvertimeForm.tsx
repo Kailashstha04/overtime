@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import Layout from '../layout/Layout';
 import { useApp } from '../../contexts/AppContext';
-import { addRecord, updateRecord, getAmountForRecord, OTType, ShiftDuty, Department } from '../../lib/store';
-import { addAuditLog } from '../../lib/store';
+import { apiAddRecord, apiUpdateRecord, getAmountForRecord, OTType, ShiftDuty, Department, apiAddAuditLog } from '../../lib/store';
 import { adToBS, bsToAD, formatBS, formatAD, BS_MONTHS, getBSMonthDays, getCurrentBS, calcMinutes, formatMinutes, todayUTC, parseADString } from '../../lib/nepaliDate';
 
 const PROCEDURES = [
@@ -98,7 +97,7 @@ export default function AddOvertimeForm() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     if (!form.patientName.trim()) { setError('Patient name is required.'); return; }
@@ -106,9 +105,9 @@ export default function AddOvertimeForm() {
     if (!form.startTime || !form.endTime) { setError('Start and end time are required.'); return; }
 
     setLoading(true);
-    setTimeout(() => {
+    try {
       if (editing) {
-        updateRecord(editing.id, {
+        await apiUpdateRecord(editing.id, {
           dateAD: form.dateAD,
           patientName: form.patientName,
           procedure: form.procedure,
@@ -118,10 +117,10 @@ export default function AddOvertimeForm() {
           endTime: form.endTime,
           remarks: form.remarks,
         });
-        addAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: 'EDIT', recordId: editing.id, details: `Edited overtime: ${form.patientName}` });
+        await apiAddAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: 'EDIT', recordId: editing.id, details: `Edited overtime: ${form.patientName}` });
         setEditingRecordId(null);
       } else {
-        addRecord({
+        await apiAddRecord({
           staffId: currentUser!.id,
           staffName: currentUser!.fullName,
           department,
@@ -134,12 +133,15 @@ export default function AddOvertimeForm() {
           endTime: form.endTime,
           remarks: form.remarks,
         });
-        addAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: 'CREATE', details: `Created overtime: ${form.patientName}` });
+        await apiAddAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: 'CREATE', details: `Created overtime: ${form.patientName}` });
       }
-      refreshData();
+      await refreshData();
       navigate('my-overtime');
+    } catch {
+      setError('Unable to save overtime. Please try again.');
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   const bsMonthDays = getBSMonthDays(parseInt(form.bsYear), parseInt(form.bsMonth));

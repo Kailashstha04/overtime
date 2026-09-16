@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { User, OvertimeRecord, AuditLog, getUsers, getRecords, getAuditLogs } from '../lib/store';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { User, OvertimeRecord, AuditLog, apiGetUsers, apiGetRecords, apiGetAuditLogs } from '../lib/store';
 
 export type Page =
   | 'login' | 'register'
@@ -41,10 +41,27 @@ function initialPage(user: User | null): Page {
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(safeParseUser);
   const [page, setPage] = useState<Page>(() => initialPage(safeParseUser()));
-  const [records, setRecords] = useState<OvertimeRecord[]>(getRecords);
-  const [users, setUsers] = useState<User[]>(getUsers);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(getAuditLogs);
+  const [records, setRecords] = useState<OvertimeRecord[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      const [loadedUsers, loadedRecords, loadedLogs] = await Promise.all([
+        apiGetUsers(),
+        apiGetRecords(),
+        apiGetAuditLogs(),
+      ]);
+      if (!mounted) return;
+      setUsers(loadedUsers);
+      setRecords(loadedRecords);
+      setAuditLogs(loadedLogs);
+    };
+    load();
+    return () => { mounted = false; };
+  }, []);
 
   const login = useCallback((user: User) => {
     setCurrentUser(user);
@@ -63,15 +80,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     window.scrollTo(0, 0);
   }, []);
 
-  const refreshData = useCallback(() => {
-    setRecords(getRecords());
-    setUsers(getUsers());
-    setAuditLogs(getAuditLogs());
+  const refreshData = useCallback(async () => {
+    const [loadedUsers, loadedRecords, loadedLogs] = await Promise.all([
+      apiGetUsers(),
+      apiGetRecords(),
+      apiGetAuditLogs(),
+    ]);
+    setRecords(loadedRecords);
+    setUsers(loadedUsers);
+    setAuditLogs(loadedLogs);
     try {
       const s = localStorage.getItem('so_current_user');
       if (s) {
         const u = JSON.parse(s);
-        const updated = getUsers().find((x: User) => x.id === u.id);
+        const updated = loadedUsers.find((x: User) => x.id === u.id);
         if (updated) {
           setCurrentUser(updated);
           localStorage.setItem('so_current_user', JSON.stringify(updated));

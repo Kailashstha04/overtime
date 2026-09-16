@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import Layout from '../layout/Layout';
 import { StatusBadge, TypeBadge, EmptyState, ConfirmDialog } from '../shared';
 import { useApp } from '../../contexts/AppContext';
-import { deleteRecord, isRecordLocked, addAuditLog } from '../../lib/store';
+import { apiDeleteRecord, isRecordLocked, apiAddAuditLog } from '../../lib/store';
 import { formatMinutes, getCurrentBS, BS_MONTHS } from '../../lib/nepaliDate';
 
 export default function MyOvertime() {
@@ -35,10 +35,10 @@ export default function MyOvertime() {
     return rs;
   }, [records, currentUser, selYear, selMonth, search, filterStatus, filterType]);
 
-  const handleDelete = (id: string) => {
-    deleteRecord(id);
-    addAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: 'DELETE', recordId: id, details: 'Deleted overtime record' });
-    refreshData();
+  const handleDelete = async (id: string) => {
+    await apiDeleteRecord(id);
+    await apiAddAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: 'DELETE', recordId: id, details: 'Deleted overtime record' });
+    await refreshData();
     setDeleteId(null);
   };
 
