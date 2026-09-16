@@ -10,6 +10,7 @@
     "format": "oxfmt",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
+    "db:seed": "node --env-file=.env prisma/seed.mjs",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate"
   },
