@@ -167,12 +167,28 @@ function initStore() {
   localStorage.setItem('so_initialized_v3', 'true');
 }
 
+function getDeletedUserIds(): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem('so_deleted_users') || '[]') as string[]);
+  } catch {
+    return new Set();
+  }
+}
+
+function markUserDeleted(id: string): void {
+  const deleted = getDeletedUserIds();
+  deleted.add(id);
+  localStorage.setItem('so_deleted_users', JSON.stringify([...deleted]));
+}
+
 export async function apiGetUsers(): Promise<User[]> {
   try {
     const remoteUsers = await apiRequest<User[]>('/api/admin/staff');
-    const remoteIds = new Set(remoteUsers.map(user => user.id));
-    const localUsers = getUsers().filter(user => !remoteIds.has(user.id));
-    return [...remoteUsers, ...localUsers];
+    const deletedUserIds = getDeletedUserIds();
+    const visibleRemoteUsers = remoteUsers.filter(user => !deletedUserIds.has(user.id));
+    const remoteIds = new Set(visibleRemoteUsers.map(user => user.id));
+    const localUsers = getUsers().filter(user => !deletedUserIds.has(user.id) && !remoteIds.has(user.id));
+    return [...visibleRemoteUsers, ...localUsers];
   } catch (error) {
     if (!isBackendUnavailable(error)) throw error;
     return getUsers();
@@ -204,11 +220,13 @@ export function deleteUser(id: string): void {
   saveUsers(users.filter(candidate => candidate.id !== id));
   saveRecords(getRecords().filter(record => record.staffId !== id));
   localStorage.setItem('so_audit', JSON.stringify(getAuditLogs().filter(log => log.userId !== id)));
+  markUserDeleted(id);
 }
 
 export async function apiDeleteUser(id: string): Promise<void> {
   try {
     await apiRequest(`/api/admin/staff?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    markUserDeleted(id);
   } catch (error) {
     if (!isBackendUnavailable(error)) throw error;
     deleteUser(id);
