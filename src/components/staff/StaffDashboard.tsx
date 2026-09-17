@@ -1,13 +1,58 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Layout from '../layout/Layout';
 import { StatCard, StatusBadge, TypeBadge } from '../shared';
 import { useApp } from '../../contexts/AppContext';
 import { getRateSettings, Department } from '../../lib/store';
-import { getCurrentBS, BS_MONTHS, formatMinutes } from '../../lib/nepaliDate';
+import { adToBS, BS_MONTHS, BS_MONTHS_NP, formatMinutes, parseADString } from '../../lib/nepaliDate';
+
+const NEPALI_DIGITS = ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'];
+
+function toNepaliDigits(value: string): string {
+  return value.replace(/\d/g, digit => NEPALI_DIGITS[Number(digit)]);
+}
+
+function getNepalDateParts(date: Date) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kathmandu',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return { year: values.year, month: values.month, day: values.day };
+}
+
+function getGreeting(hour: number): string {
+  if (hour < 5) return 'Good night';
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  if (hour < 21) return 'Good evening';
+  return 'Good night';
+}
 
 export default function StaffDashboard() {
   const { currentUser, records, navigate } = useApp();
-  const currentBS = getCurrentBS();
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const nepalDate = getNepalDateParts(now);
+  const currentBS = adToBS(parseADString(`${nepalDate.year}-${nepalDate.month}-${nepalDate.day}`));
+  const nepalTime = new Intl.DateTimeFormat('en-NP', {
+    timeZone: 'Asia/Kathmandu',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  }).format(now);
+  const greeting = getGreeting(Number(new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kathmandu',
+    hour: 'numeric',
+    hour12: false,
+  }).format(now)));
 
   const department: Department = (currentUser as any)?.department ?? 'OT Nursing';
   const rates = getRateSettings();
@@ -45,13 +90,21 @@ export default function StaffDashboard() {
     >
       {/* Welcome */}
       <div className="mb-5 p-4 rounded-xl" style={{ background: 'linear-gradient(135deg, #0d9488, #0f766e)' }}>
-        <p className="text-teal-100 text-sm">Welcome back,</p>
+        <p className="text-teal-100 text-sm">{greeting},</p>
         <p className="text-white font-bold text-lg">{currentUser?.fullName}</p>
         <div className="flex items-center gap-2 mt-1">
           <span className="text-base">{(currentUser as any)?.department === 'Cleaning' ? '🧹' : '🏥'}</span>
           <span className="text-teal-100 text-xs">{(currentUser as any)?.department ?? 'OT Nursing'}</span>
           <span className="text-teal-300 text-xs">·</span>
-          <span className="text-teal-200 text-xs font-devanagari">{currentBS.year} {BS_MONTHS[currentBS.month - 1]}</span>
+          <span className="text-teal-200 text-xs font-devanagari">
+            {toNepaliDigits(String(currentBS.year))} {BS_MONTHS_NP[currentBS.month - 1]} {toNepaliDigits(String(currentBS.day))}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 mt-3 text-teal-50">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2m5-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="text-sm font-semibold tabular-nums">{nepalTime} NPT</span>
         </div>
       </div>
 
