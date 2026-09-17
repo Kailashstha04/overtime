@@ -169,7 +169,10 @@ function initStore() {
 
 export async function apiGetUsers(): Promise<User[]> {
   try {
-    return await apiRequest<User[]>('/api/admin/staff');
+    const remoteUsers = await apiRequest<User[]>('/api/admin/staff');
+    const remoteIds = new Set(remoteUsers.map(user => user.id));
+    const localUsers = getUsers().filter(user => !remoteIds.has(user.id));
+    return [...remoteUsers, ...localUsers];
   } catch (error) {
     if (!isBackendUnavailable(error)) throw error;
     return getUsers();
@@ -214,7 +217,10 @@ export async function apiDeleteUser(id: string): Promise<void> {
 
 export async function apiGetRecords(): Promise<OvertimeRecord[]> {
   try {
-    return await apiRequest<OvertimeRecord[]>('/api/overtime');
+    const remoteRecords = await apiRequest<OvertimeRecord[]>('/api/overtime');
+    const remoteIds = new Set(remoteRecords.map(record => record.id));
+    const localRecords = getRecords().filter(record => !remoteIds.has(record.id));
+    return [...remoteRecords, ...localRecords].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   } catch (error) {
     if (!isBackendUnavailable(error)) throw error;
     return getRecords();
