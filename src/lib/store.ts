@@ -90,6 +90,7 @@ async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T
 
 function isBackendUnavailable(error: unknown): boolean {
   if (error instanceof TypeError) return true;
+  if (error instanceof DOMException && error.name === 'AbortError') return true;
   const status = (error as { status?: number })?.status;
   return status === 404 || status === 405;
 }
