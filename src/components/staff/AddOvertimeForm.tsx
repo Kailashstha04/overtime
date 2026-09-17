@@ -18,6 +18,7 @@ const PROCEDURES = [
 const SHIFTS: ShiftDuty[] = ['7-3', '8-4', '9-5', '10-6', '11-7', 'OFF', 'ONCALL'];
 
 interface FormState {
+  staffId: string;
   dateAD: string;
   bsYear: string;
   bsMonth: string;
@@ -32,13 +33,14 @@ interface FormState {
 }
 
 export default function AddOvertimeForm() {
-  const { currentUser, navigate, refreshData, editingRecordId, setEditingRecordId, records } = useApp();
+  const { currentUser, navigate, refreshData, editingRecordId, setEditingRecordId, records, users } = useApp();
   const editing = editingRecordId ? records.find(r => r.id === editingRecordId) : null;
   const currentBS = getCurrentBS();
-
-  const department: Department = (currentUser as any)?.department ?? 'OT Nursing';
+  const isAdmin = currentUser?.role === 'ADMIN';
+  const staffOptions = users.filter(user => user.role === 'STAFF' && user.isActive);
 
   const [form, setForm] = useState<FormState>({
+    staffId: editing?.staffId ?? (isAdmin ? '' : currentUser?.id ?? ''),
     dateAD: editing?.dateAD ?? formatAD(todayUTC()),
     bsYear: editing ? editing.dateBS.split('-')[0] : String(currentBS.year),
     bsMonth: editing ? editing.dateBS.split('-')[1] : String(currentBS.month),
@@ -51,6 +53,12 @@ export default function AddOvertimeForm() {
     endTime: editing?.endTime ?? '19:00',
     remarks: editing?.remarks ?? '',
   });
+
+  const selectedStaff = users.find(user => user.id === form.staffId);
+  const staffName = isAdmin ? selectedStaff?.fullName ?? '' : currentUser?.fullName ?? '';
+  const department: Department = isAdmin
+    ? selectedStaff?.department ?? 'OT Nursing'
+    : currentUser?.department ?? 'OT Nursing';
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -103,11 +111,15 @@ export default function AddOvertimeForm() {
     if (!form.patientName.trim()) { setError('Patient name is required.'); return; }
     if (!form.procedure.trim()) { setError('Procedure is required.'); return; }
     if (!form.startTime || !form.endTime) { setError('Start and end time are required.'); return; }
+    if (isAdmin && !selectedStaff) { setError('Please select a staff member.'); return; }
 
     setLoading(true);
     try {
       if (editing) {
         await apiUpdateRecord(editing.id, {
+          staffId: form.staffId,
+          staffName,
+          department,
           dateAD: form.dateAD,
           patientName: form.patientName,
           procedure: form.procedure,
@@ -121,8 +133,8 @@ export default function AddOvertimeForm() {
         setEditingRecordId(null);
       } else {
         await apiAddRecord({
-          staffId: currentUser!.id,
-          staffName: currentUser!.fullName,
+          staffId: form.staffId,
+          staffName,
           department,
           dateAD: form.dateAD,
           patientName: form.patientName,
@@ -165,6 +177,28 @@ export default function AddOvertimeForm() {
             <p className="text-xs text-teal-500">Rates apply based on your department</p>
           </div>
         </div>
+
+        {isAdmin && (
+          <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+            <label className="block text-xs font-medium text-slate-500 mb-1.5" htmlFor="overtime-staff">
+              Staff member
+            </label>
+            <select
+              id="overtime-staff"
+              value={form.staffId}
+              onChange={e => setForm(f => ({ ...f, staffId: e.target.value }))}
+              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              required
+            >
+              <option value="">Select staff member</option>
+              {staffOptions.map(staff => (
+                <option key={staff.id} value={staff.id}>
+                  {staff.fullName} - {staff.department}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Date Section */}
         <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
