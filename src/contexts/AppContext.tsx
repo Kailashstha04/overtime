@@ -114,25 +114,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const refreshData = useCallback(async () => {
-    const [loadedUsers, loadedRecords, loadedLogs] = await Promise.all([
-      apiGetUsers(),
-      apiGetRecords(),
-      apiGetAuditLogs(),
-    ]);
-    setRecords(loadedRecords);
-    setUsers(loadedUsers);
-    setAuditLogs(loadedLogs);
+    setIsLoading(true);
     try {
-      const s = localStorage.getItem('so_current_user');
-      if (s) {
-        const u = JSON.parse(s);
-        const updated = loadedUsers.find((x: User) => x.id === u.id);
-        if (updated) {
-          setCurrentUser(updated);
-          localStorage.setItem('so_current_user', JSON.stringify(updated));
+      const [loadedUsers, loadedRecords, loadedLogs] = await Promise.all([
+        apiGetUsers(),
+        apiGetRecords(),
+        apiGetAuditLogs(),
+      ]);
+      setRecords(loadedRecords);
+      setUsers(loadedUsers);
+      setAuditLogs(loadedLogs);
+      try {
+        const s = localStorage.getItem('so_current_user');
+        if (s) {
+          const u = JSON.parse(s);
+          const updated = loadedUsers.find((x: User) => x.id === u.id);
+          if (updated) {
+            setCurrentUser(updated);
+            localStorage.setItem('so_current_user', JSON.stringify(updated));
+          }
         }
-      }
-    } catch {}
+      } catch {}
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const value: AppContextType = {

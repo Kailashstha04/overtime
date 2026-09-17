@@ -49,8 +49,32 @@ function AppRouter() {
 
 function AppFeedback() {
   const { isLoading, toasts } = useApp();
-  if (isLoading) return <div className="fixed inset-0 z-[60] min-h-screen bg-slate-50 p-6"><div className="skeleton h-8 w-48 mb-6" /><div className="grid grid-cols-2 gap-3 max-w-2xl"><div className="skeleton h-24" /><div className="skeleton h-24" /><div className="skeleton h-24" /><div className="skeleton h-24" /></div></div>;
-  return <div className="toast-stack">{toasts.map(toast => <div key={toast.id} className={`toast toast-${toast.tone}`} role="status">{toast.message}</div>)}</div>;
+  return (
+    <>
+      {isLoading && (
+        <div className="refresh-overlay" role="status" aria-live="polite" aria-label="Refreshing data">
+          <div className="refresh-scene">
+            <div className="refresh-orbit refresh-orbit-one" />
+            <div className="refresh-orbit refresh-orbit-two" />
+            <div className="refresh-orbit refresh-orbit-three" />
+            <div className="refresh-core">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 6v6l4 2m5-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <span className="refresh-spark refresh-spark-one" />
+            <span className="refresh-spark refresh-spark-two" />
+            <span className="refresh-spark refresh-spark-three" />
+            <span className="refresh-spark refresh-spark-four" />
+          </div>
+          <p className="refresh-title">Syncing overtime</p>
+          <p className="refresh-subtitle">Updating your latest records...</p>
+          <div className="refresh-progress"><span /></div>
+        </div>
+      )}
+      <div className="toast-stack">{toasts.map(toast => <div key={toast.id} className={`toast toast-${toast.tone}`} role="status">{toast.message}</div>)}</div>
+    </>
+  );
 }
 
 export default function App() {
