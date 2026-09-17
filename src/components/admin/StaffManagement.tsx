@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import Layout from '../layout/Layout';
 import { EmptyState } from '../shared';
 import { useApp } from '../../contexts/AppContext';
-import { apiUpdateUser, apiAddAuditLog } from '../../lib/store';
+import { apiUpdateUser, apiDeleteUser, apiAddAuditLog } from '../../lib/store';
 
 export default function StaffManagement() {
   const { currentUser, users, records, refreshData } = useApp();
@@ -16,6 +16,7 @@ export default function StaffManagement() {
   const filteredUsers = useMemo(() => {
     const q = search.toLowerCase();
     return users.filter(u => {
+      if (u.role !== 'STAFF') return false;
       const matchSearch = u.fullName.toLowerCase().includes(q) || u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
       const matchDept = !filterDept || (u as any).department === filterDept;
       return matchSearch && matchDept;
@@ -35,6 +36,19 @@ export default function StaffManagement() {
     await apiUpdateUser({ id: userId, isActive: !currentActive });
     await apiAddAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: currentActive ? 'DEACTIVATE' : 'ACTIVATE', recordId: userId, details: `${currentActive ? 'Deactivated' : 'Activated'} staff account` });
     await refreshData();
+  };
+
+  const handleDelete = async (userId: string, fullName: string) => {
+    const confirmed = window.confirm(`Delete ${fullName}'s account? This will permanently remove their overtime records.`);
+    if (!confirmed) return;
+    try {
+      await apiDeleteUser(userId);
+      await apiAddAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: 'DELETE_STAFF', recordId: userId, details: `Deleted staff account: ${fullName}` });
+      await refreshData();
+      setMsg('Staff account deleted successfully.');
+    } catch (error) {
+      setMsg(error instanceof Error ? error.message : 'Unable to delete staff account.');
+    }
   };
 
   const startEdit = (userId: string) => {
@@ -177,6 +191,13 @@ export default function StaffManagement() {
                     className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${user.isActive ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
                   >
                     {user.isActive ? 'Deactivate' : 'Activate'}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(user.id, user.fullName)}
+                    className="py-2 px-3 rounded-lg text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 transition"
+                    title="Delete staff account"
+                  >
+                    Delete
                   </button>
                 </div>
                 <p className="text-xs text-slate-400 mt-2">

@@ -191,6 +191,25 @@ export async function apiUpdateUser(updates: Partial<User> & { id: string }): Pr
   }
 }
 
+export function deleteUser(id: string): void {
+  const users = getUsers();
+  const user = users.find(candidate => candidate.id === id);
+  if (!user) throw new Error('User not found.');
+  if (user.role === 'ADMIN') throw new Error('Admin accounts cannot be deleted.');
+  saveUsers(users.filter(candidate => candidate.id !== id));
+  saveRecords(getRecords().filter(record => record.staffId !== id));
+  localStorage.setItem('so_audit', JSON.stringify(getAuditLogs().filter(log => log.userId !== id)));
+}
+
+export async function apiDeleteUser(id: string): Promise<void> {
+  try {
+    await apiRequest(`/api/admin/staff?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+  } catch (error) {
+    if (!isBackendUnavailable(error)) throw error;
+    deleteUser(id);
+  }
+}
+
 export async function apiGetRecords(): Promise<OvertimeRecord[]> {
   try {
     return await apiRequest<OvertimeRecord[]>('/api/overtime');
