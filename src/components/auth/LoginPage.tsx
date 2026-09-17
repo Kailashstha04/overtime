@@ -24,7 +24,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8" style={{ background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 40%, #134e4a 100%)' }}>
+    <div
+      className="min-h-screen flex flex-col items-center justify-center px-4 py-8 bg-cover bg-center"
+      style={{ backgroundImage: "url('/background.png')" }}
+    >
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="text-center mb-8">
