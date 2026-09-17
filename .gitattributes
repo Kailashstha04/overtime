@@ -81,6 +81,10 @@
 *.woff2              filter=lfs diff=lfs merge=lfs -text
 *.eot                filter=lfs diff=lfs merge=lfs -text
 
+# Keep the login background available to deployments that do not fetch LFS assets.
+background.png              -filter -diff -merge
+public/background.png       -filter -diff -merge
+
 # ---------------------------------------------------------------------------
 # Data & Machine Learning
 # ---------------------------------------------------------------------------
