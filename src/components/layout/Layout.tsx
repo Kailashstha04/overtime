@@ -37,7 +37,7 @@ export default function Layout({ children, title, subtitle, action }: LayoutProp
         </header>
 
         {/* Content */}
-        <main className="flex-1 p-4 lg:p-6">{children}</main>
+        <main className="page-enter flex-1 p-4 lg:p-6">{children}</main>
       </div>
       <MobileNav />
     </div>

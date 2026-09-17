@@ -42,7 +42,7 @@ export function StatCard({
     purple: 'bg-purple-50 text-purple-600',
   };
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex items-start gap-3">
+    <div className="motion-rise bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex items-start gap-3">
       <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${colorMap[color]}`}>
         {icon}
       </div>

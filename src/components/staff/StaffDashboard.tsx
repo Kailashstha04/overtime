@@ -89,7 +89,7 @@ export default function StaffDashboard() {
       subtitle={`ड्यासबोर्ड — ${currentBS.year} ${BS_MONTHS[currentBS.month - 1]}`}
     >
       {/* Welcome */}
-      <div className="mb-5 p-4 rounded-xl" style={{ background: 'linear-gradient(135deg, #0d9488, #0f766e)' }}>
+      <div className="welcome-enter mb-5 p-4 rounded-xl" style={{ background: 'linear-gradient(135deg, #0d9488, #0f766e)' }}>
         <p className="text-teal-100 text-sm">{greeting},</p>
         <p className="text-white font-bold text-lg">{currentUser?.fullName}</p>
         <div className="flex items-center gap-2 mt-1">
@@ -112,7 +112,7 @@ export default function StaffDashboard() {
       <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
         Current Month — {BS_MONTHS[currentBS.month - 1]} {currentBS.year}
       </h3>
-      <div className="grid grid-cols-2 gap-3 mb-5">
+      <div className="motion-stagger grid grid-cols-2 gap-3 mb-5">
         <StatCard
           label="Total Entries"
           value={thisMonthRecords.length}
