@@ -33,7 +33,7 @@ interface FormState {
 }
 
 export default function AddOvertimeForm() {
-  const { currentUser, navigate, refreshData, editingRecordId, setEditingRecordId, records, users } = useApp();
+  const { currentUser, navigate, refreshData, editingRecordId, setEditingRecordId, records, users, showToast } = useApp();
   const editing = editingRecordId ? records.find(r => r.id === editingRecordId) : null;
   const currentBS = getCurrentBS();
   const isAdmin = currentUser?.role === 'ADMIN';
@@ -148,8 +148,10 @@ export default function AddOvertimeForm() {
         await apiAddAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: 'CREATE', details: `Created overtime: ${form.patientName}` });
       }
       await refreshData();
+      showToast(editing ? 'Overtime updated successfully.' : 'Overtime submitted for verification.', 'success');
       navigate('my-overtime');
-    } catch {
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Unable to save overtime.', 'error');
       setError('Unable to save overtime. Please try again.');
     } finally {
       setLoading(false);

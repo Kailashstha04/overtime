@@ -47,9 +47,16 @@ function AppRouter() {
   }
 }
 
+function AppFeedback() {
+  const { isLoading, toasts } = useApp();
+  if (isLoading) return <div className="fixed inset-0 z-[60] min-h-screen bg-slate-50 p-6"><div className="skeleton h-8 w-48 mb-6" /><div className="grid grid-cols-2 gap-3 max-w-2xl"><div className="skeleton h-24" /><div className="skeleton h-24" /><div className="skeleton h-24" /><div className="skeleton h-24" /></div></div>;
+  return <div className="toast-stack">{toasts.map(toast => <div key={toast.id} className={`toast toast-${toast.tone}`} role="status">{toast.message}</div>)}</div>;
+}
+
 export default function App() {
   return (
     <AppProvider>
+      <AppFeedback />
       <AppRouter />
     </AppProvider>
   );

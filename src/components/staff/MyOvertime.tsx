@@ -201,7 +201,7 @@ export default function MyOvertime() {
 
           {/* Desktop Table */}
           <div className="hidden lg:block bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
+            <table className="sticky-table w-full text-sm">
               <thead className="bg-slate-50 border-b border-slate-100">
                 <tr>
                   {['Date BS', 'Date AD', 'Patient', 'Procedure', 'Type', 'Shift', 'Start', 'End', 'OT Hours', 'Amount', 'Status', ''].map(h => (

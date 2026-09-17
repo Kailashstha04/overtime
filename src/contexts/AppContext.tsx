@@ -13,6 +13,13 @@ export interface AppContextType {
   records: OvertimeRecord[];
   users: User[];
   auditLogs: AuditLog[];
+  isLoading: boolean;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
+  sidebarCollapsed: boolean;
+  toggleSidebar: () => void;
+  showToast: (message: string, tone?: ToastTone) => void;
+  toasts: ToastMessage[];
   login: (user: User) => void;
   logout: () => void;
   navigate: (page: Page) => void;
@@ -20,6 +27,9 @@ export interface AppContextType {
   editingRecordId: string | null;
   setEditingRecordId: (id: string | null) => void;
 }
+
+export type ToastTone = 'success' | 'error' | 'info';
+export interface ToastMessage { id: number; message: string; tone: ToastTone; }
 
 export const AppContext = createContext<AppContextType | null>(null);
 
@@ -45,6 +55,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<User[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => localStorage.getItem('so_theme') === 'dark' ? 'dark' : 'light');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('so_sidebar_collapsed') === 'true');
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -58,9 +72,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setUsers(loadedUsers);
       setRecords(loadedRecords);
       setAuditLogs(loadedLogs);
+      setIsLoading(false);
     };
-    load();
+    load().catch(() => setIsLoading(false));
     return () => { mounted = false; };
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem('so_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => setTheme(value => value === 'light' ? 'dark' : 'light'), []);
+  const toggleSidebar = useCallback(() => setSidebarCollapsed(value => !value), []);
+
+  useEffect(() => {
+    localStorage.setItem('so_sidebar_collapsed', String(sidebarCollapsed));
+  }, [sidebarCollapsed]);
+
+  const showToast = useCallback((message: string, tone: ToastTone = 'info') => {
+    const id = Date.now() + Math.random();
+    setToasts(current => [...current, { id, message, tone }]);
+    window.setTimeout(() => setToasts(current => current.filter(toast => toast.id !== id)), 3600);
   }, []);
 
   const login = useCallback((user: User) => {
@@ -105,7 +138,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const value: AppContextType = {
     currentUser, page, records, users, auditLogs,
     login, logout, navigate, refreshData,
-    editingRecordId, setEditingRecordId,
+    editingRecordId, setEditingRecordId, isLoading, theme, toggleTheme, sidebarCollapsed, toggleSidebar, showToast, toasts,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

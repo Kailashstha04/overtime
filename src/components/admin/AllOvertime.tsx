@@ -6,7 +6,7 @@ import { apiVerifyRecord, apiUnverifyRecord, apiDeleteRecord, apiAddAuditLog } f
 import { formatMinutes, BS_MONTHS, getCurrentBS } from '../../lib/nepaliDate';
 
 export default function AllOvertime() {
-  const { currentUser, records, users, navigate, refreshData, setEditingRecordId } = useApp();
+  const { currentUser, records, users, navigate, refreshData, setEditingRecordId, showToast } = useApp();
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterType, setFilterType] = useState('');
@@ -48,12 +48,14 @@ export default function AllOvertime() {
     await apiVerifyRecord(id, currentUser!.fullName);
     await apiAddAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: 'VERIFY', recordId: id, details: 'Verified overtime record' });
     await refreshData();
+    showToast('Overtime record verified.', 'success');
   };
 
   const handleUnverify = async (id: string) => {
     await apiUnverifyRecord(id);
     await apiAddAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: 'UNVERIFY', recordId: id, details: 'Unverified overtime record' });
     await refreshData();
+    showToast('Overtime record returned to pending.', 'info');
   };
 
   const handleDelete = async (id: string) => {
@@ -61,6 +63,7 @@ export default function AllOvertime() {
     await apiAddAuditLog({ userId: currentUser!.id, userName: currentUser!.fullName, action: 'DELETE', recordId: id, details: 'Deleted overtime record' });
     await refreshData();
     setDeleteId(null);
+    showToast('Overtime record deleted.', 'success');
   };
 
   const handleEdit = (id: string) => {
@@ -192,7 +195,7 @@ export default function AllOvertime() {
 
           {/* Desktop Table */}
           <div className="hidden lg:block bg-white rounded-xl border border-slate-100 shadow-sm overflow-x-auto">
-            <table className="w-full text-sm min-w-[900px]">
+            <table className="sticky-table w-full text-sm min-w-[900px]">
               <thead className="bg-slate-50 border-b border-slate-100">
                 <tr>
                   {['Staff', 'Date BS', 'Date AD', 'Patient', 'Procedure', 'Type', 'Shift', 'Start', 'End', 'OT Hours', 'Amount', 'Status', 'Actions'].map(h => (

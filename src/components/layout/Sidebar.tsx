@@ -20,12 +20,12 @@ const AdminNav: NavItem[] = [
 ];
 
 export default function Sidebar() {
-  const { currentUser, page, navigate, logout } = useApp();
+  const { currentUser, page, navigate, logout, sidebarCollapsed, toggleSidebar, theme, toggleTheme } = useApp();
   const navItems = currentUser?.role === 'ADMIN' ? AdminNav : StaffNav;
   const dept = (currentUser as any)?.department;
 
   return (
-    <aside className="hidden lg:flex flex-col w-60 min-h-screen bg-white border-r border-slate-100 shadow-sm fixed left-0 top-0">
+    <aside className={`hidden lg:flex flex-col ${sidebarCollapsed ? 'w-[4.5rem]' : 'w-60'} min-h-screen bg-white border-r border-slate-100 shadow-sm fixed left-0 top-0 transition-[width] duration-300 overflow-hidden z-40`}>
       <div className="p-5 border-b border-slate-100">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-teal-600 flex items-center justify-center">
@@ -33,7 +33,7 @@ export default function Sidebar() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <div>
+          <div className={sidebarCollapsed ? 'hidden' : ''}>
             <p className="text-sm font-bold text-slate-800 leading-tight">Smart Overtime</p>
             <p className="text-xs text-slate-400 leading-tight">OT Management</p>
           </div>
@@ -41,12 +41,12 @@ export default function Sidebar() {
       </div>
 
       <div className="px-3 py-2.5 bg-slate-50 border-b border-slate-100 mx-3 mt-3 rounded-xl">
-        <p className="text-xs font-semibold text-slate-700 truncate">{currentUser?.fullName}</p>
+        <p className={`text-xs font-semibold text-slate-700 truncate ${sidebarCollapsed ? 'hidden' : ''}`}>{currentUser?.fullName}</p>
         <div className="flex items-center gap-1.5 mt-0.5">
           <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${currentUser?.role === 'ADMIN' ? 'bg-teal-100 text-teal-700' : 'bg-blue-100 text-blue-700'}`}>
             {currentUser?.role}
           </span>
-          {dept && (
+          {dept && !sidebarCollapsed && (
             <span className="text-xs text-slate-400">{dept === 'OT Nursing' ? '🏥' : '🧹'} {dept}</span>
           )}
         </div>
@@ -59,7 +59,7 @@ export default function Sidebar() {
             <button key={item.page} onClick={() => navigate(item.page as any)}
               className={`sidebar-nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left ${active ? 'bg-teal-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'}`}>
               <span className={active ? 'text-white' : 'text-slate-400'}>{item.icon}</span>
-              <div>
+              <div className={sidebarCollapsed ? 'hidden' : ''}>
                 <p className="text-sm font-medium leading-none">{item.label}</p>
                 <p className={`text-xs font-devanagari leading-none mt-0.5 ${active ? 'text-teal-100' : 'text-slate-400'}`}>{item.labelNp}</p>
               </div>
@@ -69,12 +69,21 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-3 border-t border-slate-100">
+        <div className="flex gap-2 mb-2">
+          <button onClick={toggleSidebar} className="flex-1 flex items-center justify-center gap-2 px-2 py-2 rounded-lg text-slate-500 hover:bg-slate-100 transition" title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={sidebarCollapsed ? 'M9 5l7 7-7 7' : 'M15 19l-7-7 7-7'} /></svg>
+            {!sidebarCollapsed && <span className="text-xs">Collapse</span>}
+          </button>
+          <button onClick={toggleTheme} className="flex items-center justify-center px-2 py-2 rounded-lg text-slate-500 hover:bg-slate-100 transition" title="Toggle light/dark mode">
+            {theme === 'dark' ? '☀' : '☾'}
+          </button>
+        </div>
         <button onClick={logout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-500 hover:bg-red-50 transition">
+          className="w-full flex items-center justify-center gap-3 px-3 py-2.5 rounded-lg text-red-500 hover:bg-red-50 transition">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          <span className="text-sm font-medium">Logout</span>
+          {!sidebarCollapsed && <span className="text-sm font-medium">Logout</span>}
         </button>
       </div>
     </aside>

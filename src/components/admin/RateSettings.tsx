@@ -5,7 +5,7 @@ import type { RateSettings } from '../../lib/store';
 import { useApp } from '../../contexts/AppContext';
 
 export default function RateSettings() {
-  const { refreshData } = useApp();
+  const { refreshData, showToast } = useApp();
   const [rates, setRates] = useState<RateSettings>(getRateSettings);
   const [saved, setSaved] = useState(false);
 
@@ -17,6 +17,7 @@ export default function RateSettings() {
     await apiSaveRateSettings(rates);
     await refreshData();
     setSaved(true);
+    showToast('Rates saved and records recalculated.', 'success');
     setTimeout(() => setSaved(false), 3000);
   };
 
@@ -129,7 +130,7 @@ export default function RateSettings() {
         <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Rate Preview</p>
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            <table className="sticky-table w-full text-xs">
               <thead>
                 <tr className="border-b border-slate-100">
                   <th className="text-left py-2 text-slate-500">Type</th>

@@ -91,7 +91,7 @@ export function ConfirmDialog({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
+      <div className="modal-panel bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
         <div className="flex items-start gap-3 mb-5">
           <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
             <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

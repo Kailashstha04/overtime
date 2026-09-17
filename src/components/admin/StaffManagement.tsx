@@ -75,7 +75,7 @@ export default function StaffManagement() {
       {/* Edit Modal */}
       {editUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
+          <div className="modal-panel bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
             <h3 className="font-semibold text-slate-800 mb-4">Edit Staff</h3>
             <div className="space-y-3">
               <div>

@@ -10,13 +10,13 @@ interface LayoutProps {
 }
 
 export default function Layout({ children, title, subtitle, action }: LayoutProps) {
-  const { logout, currentUser } = useApp();
+  const { logout, sidebarCollapsed, theme, toggleTheme } = useApp();
 
   return (
     <div className="min-h-screen bg-slate-50">
       <Sidebar />
       {/* Main */}
-      <div className="lg:ml-60 min-h-screen flex flex-col pb-20 lg:pb-0">
+      <div className={`${sidebarCollapsed ? 'lg:ml-[4.5rem]' : 'lg:ml-60'} min-h-screen flex flex-col pb-20 lg:pb-0 transition-[margin] duration-300`}>
         {/* Top bar */}
         <header className="sticky top-0 z-30 bg-white border-b border-slate-100 shadow-sm px-4 lg:px-6 py-3.5 flex items-center justify-between">
           <div>
@@ -25,6 +25,9 @@ export default function Layout({ children, title, subtitle, action }: LayoutProp
           </div>
           <div className="flex items-center gap-2">
             {action}
+            <button onClick={toggleTheme} className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100 transition" title="Toggle light/dark mode">
+              {theme === 'dark' ? '☀' : '☾'}
+            </button>
             <button
               onClick={logout}
               className="lg:hidden flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-sm text-red-500 hover:bg-red-50 transition"
