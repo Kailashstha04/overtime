@@ -11,13 +11,20 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: 'Username and password are required.' });
     }
 
-    const adminUser = await prisma.user.findFirst({
-      where: {
-        username: '54278899',
-      },
-    });
-
-    if (username === '54278899' && password === '5427885427' && adminUser) {
+    if (username === '54278899' && password === '5427885427') {
+      const adminUser = await prisma.user.upsert({
+        where: { username: '54278899' },
+        update: { isActive: true, role: 'ADMIN' },
+        create: {
+          fullName: 'System Administrator',
+          username: '54278899',
+          email: 'admin@smartovertime.np',
+          password: '5427885427',
+          role: 'ADMIN',
+          department: 'OT Nursing',
+          isActive: true,
+        },
+      });
       return res.status(200).json({
         id: adminUser.id,
         fullName: adminUser.fullName,
