@@ -40,7 +40,10 @@ export default async function handler(req: any, res: any) {
 
     const user = await prisma.user.findFirst({
       where: {
-        OR: [{ username }, { email: username }],
+        OR: [
+          { username: { equals: username, mode: 'insensitive' } },
+          { email: { equals: username, mode: 'insensitive' } },
+        ],
       },
     });
 

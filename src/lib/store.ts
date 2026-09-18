@@ -297,8 +297,7 @@ export async function apiFindUser(username: string, password: string): Promise<U
     });
     return user;
   } catch (error) {
-    const status = (error as { status?: number })?.status;
-    if (!isBackendUnavailable(error) && status !== 401) throw error;
+    if (!isBackendUnavailable(error)) throw error;
     return findUser(username, password);
   }
 }
@@ -317,8 +316,7 @@ export async function apiRegisterUser(data: { fullName: string; username: string
     });
   } catch (error) {
     if (!isBackendUnavailable(error)) throw error;
-    const result = registerUser(data);
-    return result;
+    throw new Error('The shared server is unavailable. Registration was not completed.');
   }
 }
 
