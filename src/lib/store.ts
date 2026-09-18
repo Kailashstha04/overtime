@@ -63,11 +63,7 @@ const DEFAULT_RATES: RateSettings = {
 // Legacy export for backward compatibility
 export const RATES: Record<OTType, number> = { Major: 1000, Intermediate: 800, Minor: 500 };
 
-let backendUnavailable = false;
-
 async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
-  if (backendUnavailable) throw new TypeError('Backend unavailable');
-
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 8000);
   let response: Response;
@@ -78,7 +74,6 @@ async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T
       signal: controller.signal,
     });
   } catch (error) {
-    backendUnavailable = true;
     throw error;
   } finally {
     window.clearTimeout(timeout);
@@ -88,9 +83,6 @@ async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T
     const text = await response.text();
     const error = new Error(text || 'Request failed') as Error & { status?: number };
     error.status = response.status;
-    if (response.status === 404 || response.status === 405 || response.status >= 500) {
-      backendUnavailable = true;
-    }
     throw error;
   }
 
