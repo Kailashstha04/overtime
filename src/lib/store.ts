@@ -297,7 +297,8 @@ export async function apiFindUser(username: string, password: string): Promise<U
     });
     return user;
   } catch (error) {
-    if (!isBackendUnavailable(error)) throw error;
+    const status = (error as { status?: number })?.status;
+    if (!isBackendUnavailable(error) && status !== 401) throw error;
     return findUser(username, password);
   }
 }
