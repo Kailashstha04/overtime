@@ -100,12 +100,7 @@ function isBackendUnavailable(error: unknown): boolean {
 }
 
 export async function apiGetRateSettings(): Promise<RateSettings> {
-  try {
-    return await apiRequest<RateSettings>('/api/admin/settings');
-  } catch (error) {
-    if (!isBackendUnavailable(error)) throw error;
-    return getRateSettings();
-  }
+  return apiRequest<RateSettings>('/api/admin/settings');
 }
 
 export async function apiSaveRateSettings(rates: RateSettings): Promise<void> {
@@ -174,34 +169,16 @@ function markUserDeleted(id: string): void {
 }
 
 export async function apiGetUsers(): Promise<User[]> {
-  try {
-    const remoteUsers = await apiRequest<User[]>('/api/admin/staff');
-    const deletedUserIds = getDeletedUserIds();
-    const visibleRemoteUsers = remoteUsers.filter(user => !deletedUserIds.has(user.id));
-    const remoteIds = new Set(visibleRemoteUsers.map(user => user.id));
-    const localUsers = getUsers().filter(user => !deletedUserIds.has(user.id) && !remoteIds.has(user.id));
-    return [...visibleRemoteUsers, ...localUsers];
-  } catch (error) {
-    if (!isBackendUnavailable(error)) throw error;
-    return getUsers();
-  }
+  const remoteUsers = await apiRequest<User[]>('/api/admin/staff');
+  const deletedUserIds = getDeletedUserIds();
+  return remoteUsers.filter(user => !deletedUserIds.has(user.id));
 }
 
 export async function apiUpdateUser(updates: Partial<User> & { id: string }): Promise<User> {
-  try {
-    return await apiRequest<User>('/api/admin/staff', {
-      method: 'PATCH',
-      body: JSON.stringify(updates),
-    });
-  } catch (error) {
-    if (!isBackendUnavailable(error)) throw error;
-    const users = getUsers();
-    const index = users.findIndex(user => user.id === updates.id);
-    if (index === -1) throw new Error('User not found.');
-    users[index] = { ...users[index], ...updates };
-    saveUsers(users);
-    return users[index];
-  }
+  return apiRequest<User>('/api/admin/staff', {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
 }
 
 export function deleteUser(id: string): void {
@@ -216,48 +193,24 @@ export function deleteUser(id: string): void {
 }
 
 export async function apiDeleteUser(id: string): Promise<void> {
-  try {
-    await apiRequest(`/api/admin/staff?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-    markUserDeleted(id);
-  } catch (error) {
-    if (!isBackendUnavailable(error)) throw error;
-    deleteUser(id);
-  }
+  await apiRequest(`/api/admin/staff?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+  markUserDeleted(id);
 }
 
 export async function apiGetRecords(): Promise<OvertimeRecord[]> {
-  try {
-    const remoteRecords = await apiRequest<OvertimeRecord[]>('/api/overtime');
-    const remoteIds = new Set(remoteRecords.map(record => record.id));
-    const localRecords = getRecords().filter(record => !remoteIds.has(record.id));
-    return [...remoteRecords, ...localRecords].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  } catch (error) {
-    if (!isBackendUnavailable(error)) throw error;
-    return getRecords();
-  }
+  const remoteRecords = await apiRequest<OvertimeRecord[]>('/api/overtime');
+  return remoteRecords.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export async function apiGetAuditLogs(): Promise<AuditLog[]> {
-  try {
-    return await apiRequest<AuditLog[]>('/api/admin/audit');
-  } catch (error) {
-    if (!isBackendUnavailable(error)) throw error;
-    return getAuditLogs();
-  }
+  return apiRequest<AuditLog[]>('/api/admin/audit');
 }
 
 export async function apiAddAuditLog(log: Omit<AuditLog, 'id' | 'createdAt'>): Promise<void> {
-  try {
-    await apiRequest('/api/admin/audit', {
-      method: 'POST',
-      body: JSON.stringify(log),
-    });
-  } catch (error) {
-    if (!isBackendUnavailable(error)) throw error;
-    const logs = getAuditLogs();
-    logs.unshift({ ...log, id: `audit-${Date.now()}`, createdAt: new Date().toISOString() });
-    localStorage.setItem('so_audit', JSON.stringify(logs));
-  }
+  await apiRequest('/api/admin/audit', {
+    method: 'POST',
+    body: JSON.stringify(log),
+  });
 }
 
 export function getUsers(): User[] {
@@ -290,16 +243,10 @@ export function addAuditLog(log: Omit<AuditLog, 'id' | 'createdAt'>) {
 }
 
 export async function apiFindUser(username: string, password: string): Promise<User | null> {
-  try {
-    const user = await apiRequest<User | null>('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ username, password }),
-    });
-    return user;
-  } catch (error) {
-    if (!isBackendUnavailable(error)) throw error;
-    return findUser(username, password);
-  }
+  return apiRequest<User | null>('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ username, password }),
+  });
 }
 
 export function findUser(username: string, password: string): User | null {
@@ -341,15 +288,10 @@ export function registerUser(data: { fullName: string; username: string; email: 
 }
 
 export async function apiAddRecord(record: Omit<OvertimeRecord, 'id' | 'createdAt' | 'dateBS' | 'amount' | 'totalMinutes' | 'status'>): Promise<OvertimeRecord> {
-  try {
-    return await apiRequest<OvertimeRecord>('/api/overtime', {
-      method: 'POST',
-      body: JSON.stringify(record),
-    });
-  } catch (error) {
-    if (!isBackendUnavailable(error)) throw error;
-    return addRecord(record);
-  }
+  return apiRequest<OvertimeRecord>('/api/overtime', {
+    method: 'POST',
+    body: JSON.stringify(record),
+  });
 }
 
 export function addRecord(record: Omit<OvertimeRecord, 'id' | 'createdAt' | 'dateBS' | 'amount' | 'totalMinutes' | 'status'>): OvertimeRecord {
@@ -391,12 +333,7 @@ export function updateRecord(id: string, updates: Partial<OvertimeRecord>): void
 }
 
 export async function apiUpdateRecord(id: string, updates: Partial<OvertimeRecord>): Promise<void> {
-  try {
-    await apiRequest(`/api/overtime/${id}`, { method: 'PATCH', body: JSON.stringify(updates) });
-  } catch (error) {
-    if (!isBackendUnavailable(error)) throw error;
-    updateRecord(id, updates);
-  }
+  await apiRequest(`/api/overtime/${id}`, { method: 'PATCH', body: JSON.stringify(updates) });
 }
 
 export function deleteRecord(id: string): void {
@@ -404,12 +341,7 @@ export function deleteRecord(id: string): void {
 }
 
 export async function apiDeleteRecord(id: string): Promise<void> {
-  try {
-    await apiRequest(`/api/overtime/${id}`, { method: 'DELETE' });
-  } catch (error) {
-    if (!isBackendUnavailable(error)) throw error;
-    deleteRecord(id);
-  }
+  await apiRequest(`/api/overtime/${id}`, { method: 'DELETE' });
 }
 
 export function verifyRecord(id: string, adminName: string): void {
@@ -417,15 +349,10 @@ export function verifyRecord(id: string, adminName: string): void {
 }
 
 export async function apiVerifyRecord(id: string, adminName: string): Promise<void> {
-  try {
-    await apiRequest(`/api/overtime/${id}/verify`, {
-      method: 'POST',
-      body: JSON.stringify({ verified: true, adminName }),
-    });
-  } catch (error) {
-    if (!isBackendUnavailable(error)) throw error;
-    verifyRecord(id, adminName);
-  }
+  await apiRequest(`/api/overtime/${id}/verify`, {
+    method: 'POST',
+    body: JSON.stringify({ verified: true, adminName }),
+  });
 }
 
 export function unverifyRecord(id: string): void {
@@ -437,15 +364,10 @@ export function unverifyRecord(id: string): void {
 }
 
 export async function apiUnverifyRecord(id: string): Promise<void> {
-  try {
-    await apiRequest(`/api/overtime/${id}/verify`, {
-      method: 'POST',
-      body: JSON.stringify({ verified: false }),
-    });
-  } catch (error) {
-    if (!isBackendUnavailable(error)) throw error;
-    unverifyRecord(id);
-  }
+  await apiRequest(`/api/overtime/${id}/verify`, {
+    method: 'POST',
+    body: JSON.stringify({ verified: false }),
+  });
 }
 
 export function isRecordLocked(record: OvertimeRecord, role: UserRole): boolean {
